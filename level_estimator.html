@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vibe Check</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"></script>
+  <style type="text/css">
+    body {
+      background-color: lightblue;
+    }
+  </style>
+</head>
+<body>
+  <div class="col-md-10 offset-md-1" style="padding-top: 20px;">
+    <h3>Team Level Estimator</h3>
+    <div class="row" style="padding-top: 20px;">
+      <div id="graph" class="col-md-12" style="background-color: white; min-height: 500px;">
+        <div style="width: 100%; height: 1000px;">
+          <canvas id="teamLineChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var teamLineChart;
+    color_list = ["hsl(0, 100%, 50%)", "hsl(10, 100%, 50%)", "hsl(20, 100%, 50%)", "hsl(30, 100%, 50%)",
+                  "hsl(90, 100%, 50%)", "hsl(150, 100%, 50%)", "hsl(210, 100%, 50%)", "hsl(270, 100%, 50%)",
+                  "hsl(330, 100%, 50%)", "hsl(340, 100%, 50%)", "hsl(350, 100%, 50%)", "hsl(355, 100%, 50%)"];
+
+    function show_graph(teams, level_data) {
+      if(teamLineChart){
+        teamLineChart.destroy();
+      }
+      var teamLineChartData = {
+        labels: level_data[teams[0].data.id].label,
+        datasets: teams.map(function(team) {
+          if(team.data.fullName == "Hellmouth Sunbeams"){
+            team_color = "rgb(184, 139, 15)";
+          } else if (team.data.fullName == "Canada Moist Talkers") {
+            team_color = "rgb(0, 176, 170)";
+          } else {
+            team_color = team.data.mainColor;
+          }
+          return {
+            label: team.data.nickname,
+            fill: false,
+            hidden: false,
+            borderColor: "rgb(0,0,0)",
+            backgroundColor: team_color,
+            pointBorderWidth: 1,
+            pointBorderColor: "rgb(0,0,0)",
+            borderWidth: 2,
+            pointRadius: 4,
+            data: level_data[team.data.id].ip,
+            pointBackgroundColor: level_data[team.data.id].level.map(function(level) {
+                                    return color_list[level];
+                                  })
+          };
+        })
+      };
+      var ctx = document.getElementById('teamLineChart').getContext('2d');
+      teamLineChart = new Chart(ctx, {
+        type: 'line',
+        data: teamLineChartData,
+        options: {
+          scales: {
+            xAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: 'Day of Season',
+                fontSize: 15
+              },
+              ticks: {
+                stepSize: 5,
+                maxTicksLimit: 25,
+                suggestedMin: 0,
+                suggestedMax: 100
+              }
+            }]
+          },
+          title: {
+            display: true,
+            text: 'Team Total imPosition'
+          },
+          maintainAspectRatio: false,
+          responsive:true,
+        }
+      });
+    }
+
+    $.getJSON( "https://api.sibr.dev/chronicler/v2/entities?type=team", function( team_data ) {
+      teams = team_data["items"].filter(team => team.data.stadium);
+      $.getJSON( "http://localhost:8000/output.json", function( level_data ) {
+        show_graph(teams, level_data);
+      });
+    });
+  </script>
+</body>
+</html>
+
